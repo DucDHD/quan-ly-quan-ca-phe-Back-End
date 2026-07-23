@@ -1,0 +1,38 @@
+{
+  "name": "BackEnd",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "DucDH",
+  "scripts": {
+    "lint": "eslint src --ext js --report-unused-disable-directives --max-warnings 0",
+    "dev": "cross-env BUILD_MODE=dev nodemon --exec babel-node ./src/server.js"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "http-status-codes": "^2.3.0",
+    "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "ms": "^2.1.3",
+    "mssql": "^12.7.0",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7",
+    "@babel/core": "^7",
+    "@babel/eslint-parser": "^7.22.10",
+    "@babel/node": "^7",
+    "@babel/plugin-transform-runtime": "^7",
+    "@babel/preset-env": "^7",
+    "babel-plugin-module-resolver": "^5.0.3",
+    "eslint": "8.47.0",
+    "nodemon": "^3.1.14"
+  }
+}
