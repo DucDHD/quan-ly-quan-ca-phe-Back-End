@@ -87,7 +87,6 @@ const deleteUser = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   const correctCondition = Joi.object({
     RoleId: Joi.number().integer().required(),
-    Username: Joi.string().required().pattern(USERNAME_RULE).message(USERNAME_RULE_MESSAGE),
     FullName: Joi.string().trim().min(3).max(100).required().messages({
       'string.empty': 'Full name is required.',
       'string.min': 'Full name must be at least 3 characters.',
