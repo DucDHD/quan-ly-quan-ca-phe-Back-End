@@ -38,7 +38,13 @@ const createNew = async (req, res, next) => {
 
 const getAllUser = async (req, res, next) => {
   try {
-    const getUser = await userService.getAllUser()
+    const getUser = await userService.getAllUser({
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+      search: req.query.search,
+      page: req.query.page,
+      limit: req.query.limit
+    })
     res.status(StatusCodes.OK).json(getUser)
   } catch (error) { next(error) }
 }

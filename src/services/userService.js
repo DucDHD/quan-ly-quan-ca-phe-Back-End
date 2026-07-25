@@ -54,11 +54,54 @@ const createNew = async (reqBody) => {
   } catch (error) { throw error }
 }
 
-const getAllUser = async () => {
-  try {
-    const getUser = await userModel.getAllUser()
-    return getUser
-  } catch (error) { throw error }
+// const getAllUser = async () => {
+//   try {
+//     const getUser = await userModel.getAllUser()
+//     return getUser
+//   } catch (error) { throw error }
+// }
+
+const getAllUser = async ({ sortBy = 'EmployeeId', order = 'asc', search = '', page = 1, limit = 5 }) => {
+  const allowedSortFields = [
+    'EmployeeId',
+    'FullName',
+    'RoleId',
+    'Salary'
+  ]
+  const validSortBy = allowedSortFields.includes(sortBy) ? sortBy: 'EmployeeId'
+  const validOrder = order?.toLowerCase() === 'desc' ? 'DESC' : 'ASC'
+  const validSearch = typeof search === 'string' ? search.trim(): ''
+
+
+  const parsedPage = Number.parseInt(page, 10)
+  const parsedLimit = Number.parseInt(limit, 10)
+
+  const validPage = Number.isInteger(parsedPage) && parsedPage > 0? parsedPage : 1
+  const validLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 && parsedLimit <= 100 ? parsedLimit : 5
+
+  const offset = (validPage - 1) * validLimit
+
+  const users = await userModel.getAllUser({
+    sortBy: validSortBy,
+    order: validOrder,
+    search: validSearch,
+    offset,
+    limit: validLimit
+  })
+
+  const totalRows = await userModel.countAllUser({ search })
+
+  const totalPages = Math.ceil(totalRows / validLimit)
+
+  return {
+    users,
+    pagination: {
+      page: validPage,
+      limit: validLimit,
+      totalRows,
+      totalPages
+    }
+  }
 }
 
 const deleteUser = async (userId) => {
