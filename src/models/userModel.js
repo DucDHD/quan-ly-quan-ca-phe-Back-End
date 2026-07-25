@@ -98,18 +98,65 @@ const createNew = async (updateData) => {
 
 }
 
-const getAllUser = async () => {
+const getAllUser = async ({ sortBy, order, search, offset, limit }) => {
   try {
     const db = await GET_DB()
-    const result = await db
-      .request()
-      .query(`
-            SELECT 
-                 EmployeeId, RoleId, Username, FullName, Address, PhoneNumber, Salary, Avatar
-            FROM Employees
-      `)
+    const request = db.request()
+
+    const columnMap = {
+      EmployeeId: 'EmployeeId',
+      FullName: 'FullName',
+      RoleId: 'RoleId',
+      Salary: 'Salary'
+    }
+
+    const orderByColumn = columnMap[sortBy] || 'EmployeeId'
+
+    let where = ''
+
+    if (search) {
+      where += ' WHERE FullName LIKE @search '
+      request.input('search', `%${search}%`)
+    }
+
+    request
+      .input('offset', offset)
+      .input('limit', limit)
+
+    const query = `
+      SELECT  
+      EmployeeId, RoleId, Username,FullName,Address, PhoneNumber, Salary, Avatar
+      FROM Employees
+      ${where}
+      ORDER BY ${orderByColumn} ${order}
+      OFFSET @offset ROWS
+      FETCH NEXT @limit ROWS ONLY
+    `
+    const result = await request.query(query)
 
     return result.recordset
+  } catch (error) { throw new Error(error) }
+}
+
+
+const countAllUser = async ({ search }) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+    let where = ''
+    if (search) {
+      where = ' WHERE FullName LIKE @search '
+      request.input('search', `%${search}%`)
+    }
+
+    const result = await request.query(`
+      SELECT COUNT(EmployeeId) AS totalRows
+      FROM Employees
+      ${where}
+    `)
+
+    return result.recordset[0].totalRows
+
   } catch (error) { throw new Error(error) }
 }
 
@@ -165,5 +212,6 @@ export const userModel = {
   createNew,
   getAllUser,
   deleteUser,
-  updateUser
+  updateUser,
+  countAllUser
 }
