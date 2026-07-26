@@ -3,12 +3,14 @@ import { userController } from '~/controllers/userController'
 import { userValidation } from '~/validations/userValidation'
 import { uploadAvatar } from '~/middlewares/uploadAvatar'
 import { authMiddleware } from '~/middlewares/authMiddleware'
+import { authorizePermission } from '~/middlewares/permissionMiddleware'
+import { PERMISSIONS } from '~/utils/permissions'
 
 const Router = express.Router()
 
 Router.route('/')
-  .post(authMiddleware.isAuthorized, userValidation.createNew, userController.createNew)
-  .get(authMiddleware.isAuthorized, userController.getAllUser)
+  .post(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_CREATE), userValidation.createNew, userController.createNew)
+  .get(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_VIEW), userController.getAllUser)
 
 
 Router.route('/login')
@@ -22,11 +24,11 @@ Router.route('/refresh_token')
 
 Router.route('/:id')
   .get(authMiddleware.isAuthorized, userController.getUserDetailById)
-  .delete(authMiddleware.isAuthorized, userValidation.deleteUser, userController.deleteUser)
-  .put(authMiddleware.isAuthorized, userValidation.updateUser, userController.updateUser)
+  .delete(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_DELETE), userValidation.deleteUser, userController.deleteUser)
+  .put(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_UPDATE), userValidation.updateUser, userController.updateUser)
 
 Router.route('/profile/:id')
-  .put(authMiddleware.isAuthorized, userValidation.update, userController.update)
+  .put(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_UPDATE), userValidation.update, userController.update)
 
 Router.route('/avatar/:id')
   .put(authMiddleware.isAuthorized, uploadAvatar.single('avatar'), userController.updatedAvatar)

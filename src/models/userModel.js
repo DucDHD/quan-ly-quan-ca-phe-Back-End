@@ -28,7 +28,7 @@ const findOneByUsername = async (username) => {
       .input('Username', sql.NVarChar, username)
       .query(`
             SELECT
-            EmployeeId, Username, Password
+            EmployeeId, Username, Password, RoleId
             FROM Employees
             WHERE Username = @Username
         `)
@@ -109,9 +109,7 @@ const getAllUser = async ({ sortBy, order, search, offset, limit }) => {
       RoleId: 'RoleId',
       Salary: 'Salary'
     }
-
     const orderByColumn = columnMap[sortBy] || 'EmployeeId'
-
     let where = ''
 
     if (search) {
