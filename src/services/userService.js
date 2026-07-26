@@ -130,7 +130,8 @@ const login = async (reqBody) => {
 
     const userInfo = {
       EmployeeId: existsUser.EmployeeId,
-      Username: existsUser.Username
+      Username: existsUser.Username,
+      RoleId: existsUser.RoleId
     }
 
     const accessToken = await JwtProvider.generateToken(
