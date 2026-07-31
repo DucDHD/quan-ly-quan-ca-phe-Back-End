@@ -28,7 +28,7 @@ Router.route('/:id')
   .put(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_UPDATE), userValidation.updateUser, userController.updateUser)
 
 Router.route('/profile/:id')
-  .put(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_UPDATE), userValidation.update, userController.update)
+  .put(authMiddleware.isAuthorized, userValidation.update, userController.update)
 
 Router.route('/avatar/:id')
   .put(authMiddleware.isAuthorized, uploadAvatar.single('avatar'), userController.updatedAvatar)
