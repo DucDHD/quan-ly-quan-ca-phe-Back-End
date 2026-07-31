@@ -57,10 +57,11 @@ const createNewBooking = async (updateData) => {
       .input('TableId', sql.Int, updateData.TableId)
       .input('BookingTime', sql.DateTime, updateData.BookingTime)
       .input('PeopleCount', sql.Int, updateData.PeopleCount)
+      .input('Status', sql.Int, updateData.Status)
 
     const result = await request.query(`
-      INSERT INTO Bookings (CustomerId, TableId, BookingTime, PeopleCount) OUTPUT INSERTED.*
-      VALUES (@CustomerId, @TableId, @BookingTime, @PeopleCount)
+      INSERT INTO Bookings (CustomerId, TableId, BookingTime, PeopleCount, Status) OUTPUT INSERTED.*
+      VALUES (@CustomerId, @TableId, @BookingTime, @PeopleCount, @Status)
     `)
 
     return result.recordset[0]
@@ -139,7 +140,7 @@ const findOrderProduct = async (tableId, productId) => {
     const result = await request.query(`
       SELECT ProductId, Quantity
       FROM OrderProducts
-      WHERE TableId = @TableId AND ProductId = @ProductId
+      WHERE TableId = @TableId AND ProductId = @ProductId  AND Status = 1
     `)
 
     return result.recordset[0]
@@ -156,11 +157,12 @@ const createOrder = async (reqBody) => {
       .input('TableId', sql.Int, reqBody.TableId)
       .input('ProductId', sql.Int, reqBody.ProductId)
       .input('Quantity', sql.Int, reqBody.Quantity)
+      .input('Status', sql.Int, reqBody.Status)
 
     const result = await request.query(`
-      INSERT INTO OrderProducts (TableId, ProductId, Quantity)
+      INSERT INTO OrderProducts (TableId, ProductId, Quantity, Status)
       OUTPUT INSERTED.*
-      VALUES ( @TableId, @ProductId, @Quantity)
+      VALUES ( @TableId, @ProductId, @Quantity, @Status)
     `)
 
     return result.recordset[0]
@@ -181,7 +183,7 @@ const updateOrderProduct = async (updateData) => {
       UPDATE OrderProducts
       SET Quantity = @Quantity
       OUTPUT INSERTED.*
-      WHERE TableId = @TableId AND ProductId = @ProductId
+      WHERE TableId = @TableId AND ProductId = @ProductId AND Status = 1
     `)
 
     return result.recordset[0]
@@ -226,7 +228,7 @@ const updateInvoice = async ({ InvoiceId, TotalPrice }) => {
       UPDATE Invoices
       SET TotalPrice = @TotalPrice
       OUTPUT INSERTED.*
-      WHERE InvoiceId = @InvoiceId
+      WHERE InvoiceId = @InvoiceId AND InvoiceStatus = 1
     `)
 
     return result.recordset[0]
@@ -366,8 +368,106 @@ const getTableDetail = async (TableId) => {
       JOIN Products ON OrderProducts.ProductId = Products.ProductId
       JOIN Bookings ON OrderProducts.TableId = Bookings.TableId
       JOIN Customers ON Bookings.CustomerId = Customers.CustomerId
-      WHERE Bookings.TableId = @TableId
+      WHERE Bookings.TableId = @TableId 
+        AND Bookings.Status = 1
+        AND OrderProducts.Status = 1
       ORDER BY Products.ProductName
+    `)
+
+    return result.recordset
+  } catch (error) { throw error }
+}
+
+
+const getPaymentInfo = async (TableId) => {
+  try {
+    const db = await GET_DB()
+
+    const request = db.request()
+    request.input('TableId', sql.Int, TableId)
+
+    const result = await request.query(`
+      SELECT
+        Products.ProductName,
+        Products.Price,
+        OrderProducts.Quantity
+      FROM OrderProducts
+      JOIN Products ON OrderProducts.ProductId = Products.ProductId
+      WHERE OrderProducts.TableId = @TableId
+        AND OrderProducts.Status = 1
+      ORDER BY Products.ProductName
+    `)
+
+    return result.recordset
+  } catch (error) { throw error }
+}
+
+const findOneByInvoiceIdAndBookingId = async (TableId) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request.input('TableId', sql.Int, TableId)
+
+    const result = await request.query(`
+      SELECT
+        Invoices.InvoiceId,
+        Bookings.BookingId
+      FROM Invoices
+      JOIN Bookings ON Invoices.TableId = Bookings.TableId
+      WHERE Invoices.TableId = @TableId
+        AND Invoices.InvoiceStatus = 1
+        AND Bookings.Status = 1
+    `)
+
+    return result.recordset[0]
+  } catch (error) { throw error }
+}
+
+const updatedStatusInvoice = async (InvoiceId) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request.input('InvoiceId', sql.Int, InvoiceId)
+    const result = await request.query(`
+      UPDATE Invoices
+      SET InvoiceStatus = 2
+      OUTPUT INSERTED.*
+      WHERE InvoiceId = @InvoiceId AND InvoiceStatus = 1
+    `)
+
+    return result.recordset[0]
+  } catch (error) { throw error }
+}
+
+const updatedStatusOrderProducts = async (TableId) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request.input('TableId', sql.Int, TableId)
+    const result = await request.query(`
+      UPDATE OrderProducts
+      SET Status = 2
+      OUTPUT INSERTED.*
+      WHERE TableId = @TableId AND Status = 1
+    `)
+    return result.recordset
+  } catch (error) { throw error }
+}
+
+const updatedStatusBooking = async BookingId => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request.input('BookingId', sql.Int, BookingId)
+    const result = await request.query(`
+      UPDATE Bookings
+      SET Status = 2
+      OUTPUT INSERTED.*
+      WHERE BookingId = @BookingId AND Status = 1
     `)
 
     return result.recordset[0]
@@ -394,5 +494,10 @@ export const saleModel = {
   updateInvoiceDetail,
   updateInventory,
   findInventoryById,
-  getTableDetail
+  getTableDetail,
+  getPaymentInfo,
+  findOneByInvoiceIdAndBookingId,
+  updatedStatusInvoice,
+  updatedStatusOrderProducts,
+  updatedStatusBooking
 }

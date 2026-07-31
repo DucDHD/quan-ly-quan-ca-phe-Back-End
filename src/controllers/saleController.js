@@ -41,10 +41,28 @@ const getTableDetail = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const getPaymentInfo = async (req, res, next) => {
+  try {
+    const TableId = Number(req.params.id)
+    const paymentInfo = await saleService.getPaymentInfo(TableId)
+    res.status(StatusCodes.OK).json(paymentInfo)
+  } catch (error) { next(error) }
+}
+
+const payment = async (req, res, next) => {
+  try {
+    const TableId = Number(req.params.id)
+    const payment = await saleService.payment(TableId)
+    res.status(StatusCodes.OK).json(payment)
+  } catch (error) { next(error) }
+}
+
 export const saleController = {
   getAllTable,
   bookingTable,
   getAllProduct,
   createOrder,
-  getTableDetail
+  getTableDetail,
+  getPaymentInfo,
+  payment
 }

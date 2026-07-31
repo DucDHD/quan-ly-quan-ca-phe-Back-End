@@ -19,7 +19,8 @@ const bookingTable = async (reqBody) => {
 
     const bookingData = {
       ...reqBody,
-      CustomerId: existCustomer ? existCustomer.CustomerId : createdNewCustomer.CustomerId
+      CustomerId: existCustomer ? existCustomer.CustomerId : createdNewCustomer.CustomerId,
+      Status:1
     }
 
     const bookingTable = await saleModel.createNewBooking(bookingData)
@@ -95,19 +96,12 @@ const handleOrderProducts = async (TableId, productFromClient ) => {
   const orderProducts = []
 
   for (const item of productFromClient) {
-    const existOrderProduct = await saleModel.findOrderProduct(
-      TableId,
-      item.ProductId
-    )
+    const existOrderProduct = await saleModel.findOrderProduct( TableId, item.ProductId)
 
     let orderProduct
 
     if (!existOrderProduct) {
-      orderProduct = await saleModel.createOrder({
-        TableId,
-        ProductId: item.ProductId,
-        Quantity: Number(item.Quantity)
-      })
+      orderProduct = await saleModel.createOrder({ TableId, ProductId: item.ProductId, Quantity: Number(item.Quantity), Status: 1 })
     } else {
       const newQuantity = Number(existOrderProduct.Quantity) + Number(item.Quantity)
 
@@ -219,10 +213,45 @@ const getTableDetail = async (TableId) => {
   } catch (error) { throw error }
 }
 
+const getPaymentInfo = async (TableId) => {
+  try {
+    const paymentInfo = await saleModel.getPaymentInfo(TableId)
+    return paymentInfo
+  } catch (error) { throw error }
+}
+
+const payment = async (TableId) => {
+  try {
+    // 1. tìm InvoiceId và BookingId
+    const findId = await saleModel.findOneByInvoiceIdAndBookingId(TableId)
+
+    // 2. cập nhập lại status của hóa đơn
+    const updatedStatusInvoice = await saleModel.updatedStatusInvoice(findId.InvoiceId)
+
+    // 3. cập nhập lại status của chón món
+    const updatedStatusOrderProducts = await saleModel.updatedStatusOrderProducts(TableId)
+    // 4. cập nhập lại status của đặt bàn
+    const updatedStatusBooking = await saleModel.updatedStatusBooking(findId.BookingId)
+    // 5. cập nhập lại status của bàn
+    const updateStatusTable = await saleModel.updateTableStatus({ TableId, TableStatus: 1 })
+    //return findId
+
+    return {
+      updatedStatusInvoice,
+      updatedStatusOrderProducts,
+      updatedStatusBooking,
+      updateStatusTable
+    }
+  } catch (error) {throw error }
+}
+
+
 export const saleService = {
   getAllTable,
   bookingTable,
   getAllProduct,
   createOrder,
-  getTableDetail
+  getTableDetail,
+  getPaymentInfo,
+  payment
 }

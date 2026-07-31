@@ -11,6 +11,9 @@ Router.route('/')
 Router.route('/view/:id')
   .get(authMiddleware.isAuthorized, saleController.getTableDetail)
 
+Router.route('/payment/:id')
+  .get(authMiddleware.isAuthorized, saleController.getPaymentInfo)
+  .put(authMiddleware.isAuthorized, saleValidation.tableProduct, saleController.payment)
 
 Router.route('/booking_table')
   .post(authMiddleware.isAuthorized, saleValidation.bookingTable, saleController.bookingTable)
@@ -20,7 +23,7 @@ Router.route('/products')
   .get(authMiddleware.isAuthorized, saleController.getAllProduct)
 
 Router.route('/orders')
-  .post(authMiddleware.isAuthorized, saleValidation.order, saleController.createOrder)
+  .post(authMiddleware.isAuthorized, saleValidation.tableProduct, saleController.createOrder)
 
 
 export const saleRoute = Router
