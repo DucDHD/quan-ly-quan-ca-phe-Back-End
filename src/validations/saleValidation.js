@@ -26,7 +26,7 @@ const bookingTable = async (req, res, next) => {
   }
 }
 
-const order = async (req, res, next) => {
+const tableProduct = async (req, res, next) => {
   const correctCondition = Joi.object({
     TableId: Joi.number().integer().required(),
     Products: Joi.array().items(Joi.object({
@@ -45,5 +45,5 @@ const order = async (req, res, next) => {
 
 export const saleValidation = {
   bookingTable,
-  order
+  tableProduct
 }
