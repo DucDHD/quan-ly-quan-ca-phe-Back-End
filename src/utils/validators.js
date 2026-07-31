@@ -1,6 +1,6 @@
 export const ID_RULE_MESSAGE = 'User ID must be a positive integer.'
 
-export const PHONE_RULE = /^0[35789][0-9]{8}$/
+export const PHONE_RULE = /^[0-9]{10}$/
 export const PHONE_RULE_MESSAGE = 'Please enter a valid 10-digit phone number.'
 
 export const USERNAME_RULE=/^[a-zA-Z0-9_]{4,20}$/
