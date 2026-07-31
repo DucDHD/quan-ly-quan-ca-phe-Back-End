@@ -33,9 +33,18 @@ const createOrder = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const getTableDetail = async (req, res, next) => {
+  try {
+    const TableId = Number(req.params.id)
+    const getTableDetail = await saleService.getTableDetail(TableId)
+    res.status(StatusCodes.OK).json(getTableDetail)
+  } catch (error) { next(error) }
+}
+
 export const saleController = {
   getAllTable,
   bookingTable,
   getAllProduct,
-  createOrder
+  createOrder,
+  getTableDetail
 }

@@ -212,9 +212,17 @@ const handleInventories = async(products, productFromClient) => {
   return updatedInventories
 }
 
+const getTableDetail = async (TableId) => {
+  try {
+    const getTableDetail = await saleModel.getTableDetail(TableId)
+    return getTableDetail
+  } catch (error) { throw error }
+}
+
 export const saleService = {
   getAllTable,
   bookingTable,
   getAllProduct,
-  createOrder
+  createOrder,
+  getTableDetail
 }
