@@ -350,6 +350,30 @@ const findInventoryById = async (InventoryId) => {
   } catch (error) {throw error }
 }
 
+const getTableDetail = async (TableId) => {
+  try {
+    const db = await GET_DB()
+
+    const request = db.request()
+    request.input('TableId', sql.Int, TableId)
+
+    const result = await request.query(`
+      SELECT
+          Customers.CustomerName, Customers.PhoneNumber,
+          Bookings.BookingTime,Bookings.PeopleCount, 
+          Products.ProductName, OrderProducts.Quantity, Products.Price
+      FROM OrderProducts
+      JOIN Products ON OrderProducts.ProductId = Products.ProductId
+      JOIN Bookings ON OrderProducts.TableId = Bookings.TableId
+      JOIN Customers ON Bookings.CustomerId = Customers.CustomerId
+      WHERE Bookings.TableId = @TableId
+      ORDER BY Products.ProductName
+    `)
+
+    return result.recordset[0]
+  } catch (error) { throw error }
+}
+
 export const saleModel = {
   getAllTable,
   findOneByCustomer,
@@ -369,5 +393,6 @@ export const saleModel = {
   createInvoiceDetail,
   updateInvoiceDetail,
   updateInventory,
-  findInventoryById
+  findInventoryById,
+  getTableDetail
 }

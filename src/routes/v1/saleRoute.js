@@ -8,6 +8,9 @@ const Router = express.Router()
 Router.route('/')
   .get(authMiddleware.isAuthorized, saleController.getAllTable)
 
+Router.route('/view/:id')
+  .get(authMiddleware.isAuthorized, saleController.getTableDetail)
+
 
 Router.route('/booking_table')
   .post(authMiddleware.isAuthorized, saleValidation.bookingTable, saleController.bookingTable)
