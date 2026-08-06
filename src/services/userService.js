@@ -133,7 +133,6 @@ const login = async (reqBody) => {
       Username: existsUser.Username,
       RoleId: existsUser.RoleId
     }
-
     const accessToken = await JwtProvider.generateToken(
       userInfo,
       env.ACCESS_TOKEN_SECRET_SIGNATURE,
@@ -145,7 +144,7 @@ const login = async (reqBody) => {
       userInfo,
       env.REFRESH_TOKEN_SECRET_SIGNATURE,
       env.REFRESH_TOKEN_LIFE
-      //30
+      //15
     )
 
     return { accessToken, refreshToken, ...pickUser(existsUser) }
@@ -156,10 +155,10 @@ const login = async (reqBody) => {
 const refreshToken = async(clientRefreshToken) => {
   try {
     const refreshTokenDecoded = await JwtProvider.verifyToken(clientRefreshToken, env.REFRESH_TOKEN_SECRET_SIGNATURE)
-
     const userInfo = {
       EmployeeId: refreshTokenDecoded.EmployeeId,
-      Username: refreshTokenDecoded.Username
+      Username: refreshTokenDecoded.Username,
+      RoleId: refreshTokenDecoded.RoleId
     }
     const accessToken = await JwtProvider.generateToken(
       userInfo,

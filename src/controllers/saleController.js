@@ -57,6 +57,52 @@ const payment = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const tranferTables = async (req, res, next) => {
+  try {
+    const tranferTable = await saleService.tranferTables(req.body)
+    res.status(StatusCodes.OK).json(tranferTable)
+  } catch (error) { next(error) }
+}
+
+const getInfoSplitTable = async (req, res, next) => {
+  try {
+    const TableId = Number(req.params.id)
+    const getInfo = await saleService.getInfoSplitTable(TableId)
+    res.status(StatusCodes.OK).json(getInfo)
+  } catch (error) { next(error) }
+}
+
+
+const splitTable = async (req, res, next) => {
+  try {
+    const splitTable = await saleService.splitTable(req.body)
+
+    res.status(StatusCodes.OK).json(splitTable)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const cancelTable = async (req, res, next) => {
+  try {
+    const TableId = Number(req.params.id)
+    const cancelTable = await saleService.cancelTable(TableId)
+    res.status(StatusCodes.OK).json(cancelTable)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const mergeTable = async (req, res, next) => {
+  try {
+    const mergeTable = await saleService.mergeTable(req.body)
+    res.status(StatusCodes.OK).json(mergeTable)
+  } catch (error) {
+    next(error)
+  }
+}
+
+
 export const saleController = {
   getAllTable,
   bookingTable,
@@ -64,5 +110,10 @@ export const saleController = {
   createOrder,
   getTableDetail,
   getPaymentInfo,
-  payment
+  payment,
+  tranferTables,
+  getInfoSplitTable,
+  splitTable,
+  cancelTable,
+  mergeTable
 }

@@ -42,8 +42,43 @@ const tableProduct = async (req, res, next) => {
   }
 }
 
+const tranferTable = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    oldTableId: Joi.number().integer().required(),
+    newTableId: Joi.number().integer().required()
+  })
+  try {
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message))
+  }
+}
+
+const splitTable = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    oldTableId: Joi.number().integer().required(),
+    newTableId: Joi.number().integer().required(),
+    PeopleCount: Joi.number().integer().min(1).required(),
+    products: Joi.array().items(
+      Joi.object({
+        ProductId: Joi.number().integer().required(),
+        Quantity: Joi.number().integer().min(1).required()
+      })
+    ).min(1).required()
+  })
+
+  try {
+    await correctCondition.validateAsync(req.body, { abortEarly: false })
+    next()
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, error.message))
+  }
+}
 
 export const saleValidation = {
   bookingTable,
-  tableProduct
+  tableProduct,
+  tranferTable,
+  splitTable
 }

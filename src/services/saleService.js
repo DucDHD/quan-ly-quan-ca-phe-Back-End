@@ -1,4 +1,6 @@
 import { saleModel } from '~/models/saleModel'
+import ApiError from '~/utils/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 const getAllTable = async () => {
   try {
@@ -63,6 +65,7 @@ const createOrder = async (reqBody, EmployeeId) => {
     const orderProducts = await handleOrderProducts(reqBody.TableId, reqBody.Products)
 
     // 6. Tạo hoặc cập nhật hóa đơn
+
     const { invoice, updateStatusTable } = await handleInvoice(reqBody.TableId, totalPrice, EmployeeId, customerByTableId)
 
     // 7. Insert hoặc update InvoiceDetails
@@ -119,7 +122,6 @@ const handleOrderProducts = async (TableId, productFromClient ) => {
 
 const handleInvoice = async (TableId, totalPrice, EmployeeId, customerByTableId ) => {
   const existInvoice = await saleModel.findOneByInvoice(TableId)
-
   let invoice
   let updateStatusTable = null
   const createData = {
@@ -154,10 +156,7 @@ const handleInvoiceDetails = async (InvoiceId, products, productFromClient) => {
       product => product.ProductId === item.ProductId
     )
 
-    const existInvoiceDetail = await saleModel.findInvoiceDetail(
-      InvoiceId,
-      item.ProductId
-    )
+    const existInvoiceDetail = await saleModel.findInvoiceDetail(InvoiceId)
 
     let invoiceDetail
 
@@ -224,9 +223,11 @@ const payment = async (TableId) => {
   try {
     // 1. tìm InvoiceId và BookingId
     const findId = await saleModel.findOneByInvoiceIdAndBookingId(TableId)
-
     // 2. cập nhập lại status của hóa đơn
-    const updatedStatusInvoice = await saleModel.updatedStatusInvoice(findId.InvoiceId)
+    const updatedStatusInvoice = await saleModel.updatedStatusInvoice({
+      InvoiceId: findId.InvoiceId,
+      InvoiceStatus: 2
+    })
 
     // 3. cập nhập lại status của chón món
     const updatedStatusOrderProducts = await saleModel.updatedStatusOrderProducts(TableId)
@@ -245,6 +246,463 @@ const payment = async (TableId) => {
   } catch (error) {throw error }
 }
 
+const tranferTables = async (reqBody) => {
+  const { oldTableId, newTableId } = reqBody
+
+  if (oldTableId === newTableId ) {
+    throw new ApiError(StatusCodes.CONFLICT, 'Cannot transfer to the same table.')
+  }
+
+
+  const findOldTable = await saleModel.findStatusTableById(oldTableId)
+  const findNewTable = await saleModel.findStatusTableById(newTableId)
+
+  if (!findOldTable) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Current table not found.')
+  }
+
+  if (!findNewTable) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Destination table not found')
+  }
+
+  if (![2, 3].includes(findOldTable.TableStatus)) {
+    throw new ApiError(StatusCodes.CONFLICT, 'The current table cannot be transferred.')
+  }
+
+  if (findNewTable.TableStatus !== 1) {
+    throw new ApiError(StatusCodes.CONFLICT, 'The destination table is not available.')
+  }
+
+
+  let updatedOldTabel
+  let updatedNewTable
+  let updatedBooking
+  let updatedOrderProducts
+  let updatedInvoice
+
+
+  if (findOldTable.TableStatus === 3) {
+
+    updatedOldTabel = await saleModel.updateTableStatus({
+      TableId: oldTableId,
+      TableStatus: 1
+    })
+    updatedNewTable = await saleModel.updateTableStatus({
+      TableId: newTableId,
+      TableStatus: 3
+    })
+
+    updatedBooking = await saleModel.transferBooking(
+      oldTableId,
+      newTableId
+    )
+
+  } else if (findOldTable.TableStatus === 2) {
+
+    updatedOldTabel = await saleModel.updateTableStatus({
+      TableId: oldTableId,
+      TableStatus: 1
+    })
+    updatedNewTable = await saleModel.updateTableStatus({
+      TableId: newTableId,
+      TableStatus: 2
+    })
+
+
+    updatedOrderProducts = await saleModel.transferOrderProducts(
+      oldTableId,
+      newTableId
+    )
+
+    updatedInvoice = await saleModel.transferInvoice(
+      oldTableId,
+      newTableId
+    )
+    updatedBooking = await saleModel.transferBooking(
+      oldTableId,
+      newTableId
+    )
+  }
+
+  return { updatedOldTabel, updatedNewTable, updatedBooking, updatedOrderProducts, updatedInvoice }
+}
+
+const getInfoSplitTable = async (TableId) => {
+  try {
+    const product = await saleModel.getInfoSplitTable(TableId)
+
+    if (!product.length) {
+      return { PeopleCount: 0, products: [] }
+    }
+
+    const PeopleCount = product[0].PeopleCount
+
+    const products = product.map(item => ({
+      ProductId: item.ProductId,
+      ProductName: item.ProductName,
+      Price: item.Price,
+      Quantity: item.Quantity
+    }))
+
+    return { PeopleCount, products }
+  } catch (error) { throw error }
+}
+
+const splitTable = async (reqBody) => {
+  const { oldTableId, newTableId, PeopleCount, products } = reqBody
+
+  if (oldTableId === newTableId ) {
+    throw new ApiError(StatusCodes.CONFLICT, 'Cannot split to the same table.')
+  }
+
+  // 1. Thực hiện Thêm mời orderProducts
+  const createOrderProduct = await createSplitProducts(newTableId, products)
+  // 2. update lại table orderProducts
+  const updateOrderProducr = await updateSplitProducts(oldTableId, products)
+
+  // 3. Tìm customerId
+  const findOneByBooking = await saleModel.findOneByBookingId(oldTableId)
+
+  if (!findOneByBooking) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Current booking not found.')
+  }
+
+  // 4. Thêm vào table Booking
+
+  const createdBooking = await createSplitBooking(newTableId, PeopleCount, findOneByBooking.CustomerId, findOneByBooking.BookingTime)
+  // 5. update lại table Booking
+  const updatedBookingOld = await updateSplitBooking(oldTableId, PeopleCount)
+
+  // 6. lấy hóa đơn
+  const findOneByInvoice = await saleModel.findOneByInvoice(oldTableId)
+  if (!findOneByInvoice) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Current invoice not found.')
+  }
+
+  // 7. Lấy thông tin sản phâm của table mới
+  const getInfoProduct = await saleModel.getPaymentInfo(newTableId)
+
+
+  // 8. Tính tổng tiền hóa đơn sau khi tách bàn ra
+
+  const totalPrice = totalPriceInvoice(getInfoProduct, products)
+  // 9. Create Table Invoices
+
+  const createdInvoices = createSplitInvoices(findOneByInvoice.EmployeeId, newTableId, findOneByInvoice.CustomerId, totalPrice)
+
+  // 10. update lại table Invoices
+  const updatedInvoices = await saleModel.updateSplitInvoiceTotalPrice({
+    TableId: oldTableId,
+    TotalPrice: totalPrice
+  })
+
+  // 11. Tìm InvoiceId
+  const findOneByNewInvoice = await saleModel.findOneByInvoice(newTableId)
+
+  // 12. Create InvoiceDetail mới
+  const createdInvoiceDetail = await createSplitInvoiceDetail(findOneByNewInvoice.InvoiceId, getInfoProduct )
+
+  // 13. Cập nhật invoiceDetail
+  const updatedinvoiceDetail = await updateSplitInvoiceDetail(findOneByInvoice.InvoiceId, products)
+
+  // 14. cập nhập Status Table
+  const updatedStatusTable = await saleModel.updateTableStatus({
+    TableId: newTableId,
+    TableStatus: 2
+  })
+
+  return {
+    createOrderProduct,
+    updateOrderProducr,
+    createdBooking,
+    updatedBookingOld,
+    createdInvoices,
+    updatedInvoices,
+    createdInvoiceDetail,
+    updatedinvoiceDetail,
+    updatedStatusTable,
+    oldTableId,
+    newTableId
+  }
+}
+
+const createSplitProducts = async (newTableId, products) => {
+
+  for (const product of products) {
+    await saleModel.createSplitOrderProduct({
+      TableId: newTableId,
+      ProductId: product.ProductId,
+      Quantity: product.Quantity,
+      Status: 1
+    })
+  }
+
+}
+
+const updateSplitProducts = async (oldTableId, products) => {
+
+  const updatedOrderProducts = []
+
+  for (const product of products) {
+    const updatedOrderProduct =
+      await saleModel.updateSplitOrderProduct({
+        TableId: oldTableId,
+        ProductId: product.ProductId,
+        Quantity: product.Quantity
+      })
+
+    if (!updatedOrderProduct) {
+      throw new Error( `Món ${product.ProductId} không tồn tại hoặc số lượng tách không hợp lệ` )
+    }
+
+    updatedOrderProducts.push(updatedOrderProduct)
+  }
+
+  return updatedOrderProducts
+}
+
+const createSplitBooking = async ( newTableId, splitPeopleCount, customerId, BookingTime) => {
+
+  const createdBooking = await saleModel.createSplitBooking({
+    CustomerId: customerId,
+    TableId: newTableId,
+    BookingTime: BookingTime,
+    PeopleCount: splitPeopleCount,
+    Status: 1
+  })
+
+  return createdBooking
+}
+
+const updateSplitBooking = async (oldTableId, splitPeopleCount) => {
+  const updatedBooking = await saleModel.updateSplitBookingPeopleCount({
+    TableId: oldTableId,
+    PeopleCount: splitPeopleCount
+  })
+  return updatedBooking
+}
+
+const createSplitInvoices = async (EmployeeId, newTableId, CustomerId, TotalPrice) => {
+  const createdInvoices = await saleModel.createInvoice({
+    EmployeeId: EmployeeId,
+    TableId: newTableId,
+    CustomerId: CustomerId,
+    PromotionId: null,
+    TotalPrice: TotalPrice,
+    InvoiceStatus: 1
+  })
+  return createdInvoices
+}
+
+const createSplitInvoiceDetail = async (InvoiceId, getInfoProduct) => {
+  const createdInvoiceDetails = []
+  for (const product of getInfoProduct ) {
+    const createdInvoiceDetail = await saleModel.createInvoiceDetail({
+      InvoiceId: InvoiceId,
+      ProductId: product.ProductId,
+      Quantity: product.Quantity,
+      Price: product.Price
+    })
+    createdInvoiceDetails.push(createdInvoiceDetail)
+  }
+
+  return createdInvoiceDetails
+
+}
+
+const updateSplitInvoiceDetail = async (oldInvoiceId, products) => {
+  for (const product of products) {
+    const updatedInvoiceDetail = await saleModel.updateSplitInvoiceDetail({
+      InvoiceId: oldInvoiceId,
+      ProductId: product.ProductId,
+      Quantity: product.Quantity
+    })
+    if (updatedInvoiceDetail.Quantity === 0) {
+      await saleModel.deleteInvoiceDetail({
+        InvoiceId: oldInvoiceId,
+        ProductId: product.ProductId
+      })
+    }
+  }
+}
+
+const cancelTable = async (TableId) => {
+  try {
+
+    const bookingId = await saleModel.findOneByBookingId(TableId)
+    const updatedBooking = await saleModel.updatedStatusBooking(bookingId.BookingId)
+    const updatedStatusTable = await saleModel.updateTableStatus({
+      TableId: TableId,
+      TableStatus: 1
+    })
+
+    return { updatedBooking, updatedStatusTable }
+  } catch (error) { throw error }
+}
+
+const mergeTable = async (reqBody) => {
+  try {
+
+    const { mergeTableIds, targetTableId } = reqBody
+    // B1. Merge Table Booking
+    const mergeBooking = await mergeBookings(mergeTableIds, targetTableId)
+
+    // B2. Merge Table OrderProducts
+    const mergeOrderProduct = await mergeOrderProducts(mergeTableIds, targetTableId)
+
+    // B3. Merge Table Invoice
+    const mergeInvoice = await mergeInvoices(mergeTableIds, targetTableId)
+    // B4. Merge Table InvoiceDetail
+    const mergeInvoiceDetail = await mergeinvoiceDetails(mergeInvoice)
+
+    // B5. updated lại Status Table CafeTables
+
+    const updatedStatusTables = []
+    for (const TableId of mergeTableIds) {
+      const updateStatusTable = await saleModel.updateTableStatus({
+        TableId: TableId,
+        TableStatus: 1
+      })
+      updatedStatusTables.push(updateStatusTable)
+    }
+
+    return { mergeBooking, mergeOrderProduct, mergeInvoice, mergeInvoiceDetail, updatedStatusTables }
+
+
+  } catch (error) { throw error }
+}
+
+const mergeBookings = async ( mergeTableIds, targetTableId) => {
+
+  const targetBookingTableId = await saleModel.findOneByBookingId(targetTableId)
+
+  const mergeBookings = []
+
+  for (const tableId of mergeTableIds) {
+    const booking = await saleModel.findOneByBookingId(tableId)
+    mergeBookings.push(booking)
+  }
+
+  let totalPeopleCount = targetBookingTableId.PeopleCount
+
+  for (const booking of mergeBookings) {
+    totalPeopleCount += booking.PeopleCount
+  }
+
+  const updatedBookingPeople = await saleModel.updateMergeBookingPeopleCount({
+    TableId: targetTableId,
+    PeopleCount: totalPeopleCount
+  })
+
+  let updatedStatusBooking
+  for (const booking of mergeBookings) {
+    await saleModel.updatedStatusBooking( booking.BookingId)
+  }
+  return { updatedBookingPeople, updatedStatusBooking }
+}
+
+
+const mergeOrderProducts = async (mergeTableIds, targetTableId) => {
+
+  const updatedOrderProducts = []
+  for (const mergeTableId of mergeTableIds) {
+    const orderProducts = await saleModel.findOrderProduct(mergeTableId)
+
+    for (const product of orderProducts) {
+      const targetProduct = await saleModel.findOrderProductIdAndProductId(
+        targetTableId,
+        product.ProductId
+      )
+
+      let updatedOrderProduct
+      if (!targetProduct) {
+        updatedOrderProduct = await saleModel.updateOrderProductTableId({
+          OrderProductId: product.OrderProductId,
+          TableId: targetTableId
+        })
+      } else {
+        updatedOrderProduct = await saleModel.updateOrderProductQuantity({
+          OrderProductId: targetProduct.OrderProductId,
+          Quantity: Number(targetProduct.Quantity) + Number(product.Quantity)
+        })
+
+        await saleModel.deleteOrderProduct(product.OrderProductId )
+      }
+      updatedOrderProducts.push(updatedOrderProduct)
+    }
+  }
+  return updatedOrderProducts
+}
+
+const mergeInvoices = async (mergeTableIds, targetTableId) => {
+
+  const tagerInvoiceTableId = await saleModel.findOneByInvoice(targetTableId)
+
+  const invoicesTableIdToMerges = []
+  for (const mergeTableId of mergeTableIds) {
+    const invoicesTableIdToMerge = await saleModel.findOneByInvoice(mergeTableId)
+    invoicesTableIdToMerges.push(invoicesTableIdToMerge)
+  }
+
+  let totalPrice = tagerInvoiceTableId.TotalPrice
+
+  for (const invoice of invoicesTableIdToMerges) {
+    totalPrice += invoice.TotalPrice
+  }
+
+  const updatedtotalPrice = await saleModel.updateInvoice({
+    InvoiceId: tagerInvoiceTableId.InvoiceId,
+    TotalPrice: totalPrice
+  })
+
+  const updatedStatusInvoices = []
+  for (const invoice of invoicesTableIdToMerges ) {
+    const updatedStatusInvoice = await saleModel.updatedStatusInvoice({
+      InvoiceId: invoice.InvoiceId,
+      InvoiceStatus: 3
+    })
+    updatedStatusInvoices.push(updatedStatusInvoice)
+  }
+
+  return { updatedtotalPrice, updatedStatusInvoices, tagerInvoiceTableId, invoicesTableIdToMerges }
+}
+
+const mergeinvoiceDetails = async (mergeInvoice) => {
+
+  const { tagerInvoiceTableId, invoicesTableIdToMerges } = mergeInvoice
+
+  const updatedInvoiceDetails = []
+
+  for (const invoice of invoicesTableIdToMerges) {
+    const invoiceDetail = await saleModel.findInvoiceDetail(invoice.InvoiceId)
+
+    for (const detail of invoiceDetail) {
+      const targetDetail = await saleModel.findInvoiceAndProductId(tagerInvoiceTableId.InvoiceId, detail.ProductId)
+
+      let updatedInvoiceDetail
+      if ( !targetDetail ) {
+        updatedInvoiceDetail = await saleModel.createInvoiceDetail({
+          InvoiceId: tagerInvoiceTableId.InvoiceId,
+          ProductId: detail.ProductId,
+          Quantity: detail.Quantity,
+          Price: detail.Price
+        })
+      } else {
+        const newQuantity = Number(targetDetail.Quantity) + Number(detail.Quantity)
+        updatedInvoiceDetail = await saleModel.updateInvoiceDetail({
+          InvoiceId: tagerInvoiceTableId.InvoiceId,
+          ProductId: detail.ProductId,
+          Quantity:  newQuantity,
+          Price: detail.Price
+        })
+      }
+      updatedInvoiceDetails.push(updatedInvoiceDetail)
+    }
+    await saleModel.deleteInvoiceDetailsByInvoiceId(invoice.InvoiceId)
+  }
+
+  return updatedInvoiceDetails
+}
 
 export const saleService = {
   getAllTable,
@@ -253,5 +711,10 @@ export const saleService = {
   createOrder,
   getTableDetail,
   getPaymentInfo,
-  payment
+  payment,
+  tranferTables,
+  getInfoSplitTable,
+  splitTable,
+  cancelTable,
+  mergeTable
 }
