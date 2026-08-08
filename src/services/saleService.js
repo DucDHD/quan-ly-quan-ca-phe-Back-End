@@ -219,7 +219,7 @@ const getPaymentInfo = async (TableId) => {
   } catch (error) { throw error }
 }
 
-const payment = async (TableId) => {
+const payment = async (TableId, EmployeeId) => {
   try {
     // 1. tìm InvoiceId và BookingId
     const findId = await saleModel.findOneByInvoiceIdAndBookingId(TableId)
@@ -236,12 +236,19 @@ const payment = async (TableId) => {
     // 5. cập nhập lại status của bàn
     const updateStatusTable = await saleModel.updateTableStatus({ TableId, TableStatus: 1 })
     //return findId
-
+    const createIncome = await saleModel.createIncome({
+      EmployeeId,
+      InvoiceId: findId.InvoiceId,
+      IncomeDate: new Date(),
+      TotalPrice: findId.TotalPrice,
+      Description: `Thanh toán hóa đơn ${findId.InvoiceId}`
+    })
     return {
       updatedStatusInvoice,
       updatedStatusOrderProducts,
       updatedStatusBooking,
-      updateStatusTable
+      updateStatusTable,
+      createIncome
     }
   } catch (error) {throw error }
 }

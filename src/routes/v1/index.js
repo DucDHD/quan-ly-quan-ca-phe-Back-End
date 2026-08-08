@@ -2,6 +2,8 @@ import express from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { userRoute } from './userRoute'
 import { saleRoute } from './saleRoute'
+import { equitmentRoute } from './equipmentRoute'
+import { inventoryRoute } from './InventoryRoute'
 
 const Router = express.Router()
 
@@ -16,6 +18,12 @@ Router.use('/users', userRoute)
 
 /** User API */
 Router.use('/sales', saleRoute)
+
+/** Equiments API */
+Router.use('/equipments', equitmentRoute)
+
+/** Inventory API */
+Router.use('/inventorys', inventoryRoute)
 
 
 export const APIs_V1 = Router

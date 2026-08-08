@@ -9,8 +9,8 @@ import { PERMISSIONS } from '~/utils/permissions'
 const Router = express.Router()
 
 Router.route('/')
-  .post(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_CREATE), userValidation.createNew, userController.createNew)
-  .get(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_VIEW), userController.getAllUser)
+  .post(authMiddleware.isAuthorized, authorizePermission('employees', PERMISSIONS.CREATE), userValidation.createNew, userController.createNew)
+  .get(authMiddleware.isAuthorized, authorizePermission('employees', PERMISSIONS.VIEW), userController.getAllUser)
 
 
 Router.route('/login')
@@ -24,8 +24,8 @@ Router.route('/refresh_token')
 
 Router.route('/:id')
   .get(authMiddleware.isAuthorized, userController.getUserDetailById)
-  .delete(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_DELETE), userValidation.deleteUser, userController.deleteUser)
-  .put(authMiddleware.isAuthorized, authorizePermission(PERMISSIONS.EMPLOYEE_UPDATE), userValidation.updateUser, userController.updateUser)
+  .delete(authMiddleware.isAuthorized, authorizePermission('employees', PERMISSIONS.DELETE), userValidation.deleteUser, userController.deleteUser)
+  .put(authMiddleware.isAuthorized, authorizePermission('employees', PERMISSIONS.UPDATE), userValidation.updateUser, userController.updateUser)
 
 Router.route('/profile/:id')
   .put(authMiddleware.isAuthorized, userValidation.update, userController.update)

@@ -450,7 +450,8 @@ const findOneByInvoiceIdAndBookingId = async (TableId) => {
     const result = await request.query(`
       SELECT
         Invoices.InvoiceId,
-        Bookings.BookingId
+        Bookings.BookingId,
+        Invoices.TotalPrice
       FROM Invoices
       JOIN Bookings ON Invoices.TableId = Bookings.TableId
       WHERE Invoices.TableId = @TableId
@@ -896,6 +897,28 @@ const deleteOrderProduct = async (OrderProductId) => {
   }
 }
 
+const createIncome = async (incomeData) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request
+      .input('EmployeeId', sql.Int, incomeData.EmployeeId)
+      .input('InvoiceId', sql.Int, incomeData.InvoiceId)
+      .input('IncomeDate', sql.DateTime, incomeData.IncomeDate)
+      .input('TotalPrice', sql.Decimal(18, 2), incomeData.TotalPrice)
+      .input('Description', sql.NVarChar, incomeData.Description)
+
+    const result = await request.query(`
+      INSERT INTO Income (EmployeeId, InvoiceId, IncomeDate, TotalPrice, Description)
+      OUTPUT INSERTED.*
+      VALUES (@EmployeeId, @InvoiceId, @IncomeDate, @TotalPrice, @Description)
+    `)
+
+    return result.recordset[0]
+  } catch (error) { throw error }
+}
+
 export const saleModel = {
   getAllTable,
   findOneByCustomer,
@@ -941,5 +964,6 @@ export const saleModel = {
   deleteOrderProduct,
   findOrderProductIdAndProductId,
   updateOrderProductTableId,
-  updateOrderProductQuantity
+  updateOrderProductQuantity,
+  createIncome
 }

@@ -52,7 +52,8 @@ const getPaymentInfo = async (req, res, next) => {
 const payment = async (req, res, next) => {
   try {
     const TableId = Number(req.params.id)
-    const payment = await saleService.payment(TableId)
+    const EmployeeId = req.jwtDecoded.EmployeeId
+    const payment = await saleService.payment(TableId, EmployeeId)
     res.status(StatusCodes.OK).json(payment)
   } catch (error) { next(error) }
 }
