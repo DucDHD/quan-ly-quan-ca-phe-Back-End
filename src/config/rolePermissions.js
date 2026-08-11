@@ -21,6 +21,12 @@ export const ROLE_PERMISSIONS = {
       PERMISSIONS.CREATE,
       PERMISSIONS.UPDATE,
       PERMISSIONS.DELETE
+    ],
+    products: [
+      PERMISSIONS.VIEW,
+      PERMISSIONS.CREATE,
+      PERMISSIONS.UPDATE,
+      PERMISSIONS.DELETE
     ]
   },
 
@@ -40,24 +46,32 @@ export const ROLE_PERMISSIONS = {
       PERMISSIONS.VIEW,
       PERMISSIONS.CREATE,
       PERMISSIONS.UPDATE
+    ],
+    products: [
+      PERMISSIONS.VIEW,
+      PERMISSIONS.CREATE,
+      PERMISSIONS.UPDATE
     ]
   },
 
   [ROLES.CASHIER]: {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
-    inventorys: [PERMISSIONS.VIEW]
+    inventorys: [PERMISSIONS.VIEW],
+    products: [PERMISSIONS.VIEW]
   },
 
   [ROLES.BARISTA]: {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
-    inventorys: [PERMISSIONS.VIEW]
+    inventorys: [PERMISSIONS.VIEW],
+    products: [PERMISSIONS.VIEW]
   },
 
   [ROLES.WAITER]: {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
-    inventorys: [PERMISSIONS.VIEW]
+    inventorys: [PERMISSIONS.VIEW],
+    products: [PERMISSIONS.VIEW]
   }
 }

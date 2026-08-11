@@ -124,6 +124,26 @@ const getAllInventoryCategories = async (status) => {
   } catch (error) { throw error }
 }
 
+// const findInventory = async (CategoryId, status) => {
+//   try {
+//     const db = await GET_DB()
+//     const request = db.request()
+
+//     request
+//       .input('CategoryId', CategoryId)
+//       .input('status', status)
+
+//     const result = await request.query(`
+//       SELECT 
+//         InventoryId, StockQuantity, Price
+//       FROM Inventory
+//       WHERE CategoryId = @CategoryId AND Status = @status
+//     `)
+
+//     return result.recordset[0]
+//   } catch (error) { throw error }
+// }
+
 const findInventory = async (CategoryId, status) => {
   try {
     const db = await GET_DB()
@@ -134,10 +154,16 @@ const findInventory = async (CategoryId, status) => {
       .input('status', status)
 
     const result = await request.query(`
-      SELECT 
-        InventoryId, StockQuantity, Price
+      SELECT
+        Inventory.InventoryId,
+        Inventory.StockQuantity,
+        Inventory.Price,
+        InventoryCategories.CategoryName
       FROM Inventory
-      WHERE CategoryId = @CategoryId AND Status = @status
+      INNER JOIN InventoryCategories
+        ON Inventory.CategoryId = InventoryCategories.CategoryId
+      WHERE Inventory.CategoryId = @CategoryId
+        AND Inventory.Status = @status
     `)
 
     return result.recordset[0]
@@ -202,6 +228,31 @@ const createImportDetail = async (ImportId, InventoryId, Quantity, Price) => {
 
     return result.recordset[0]
   } catch (error) { throw error }
+}
+
+const createExpense = async (EmployeeId, ExpenseDate, Description, TotalPrice, ImportId, EquipmentId) => {
+  try {
+    const db = await GET_DB()
+    const request = db.request()
+
+    request
+      .input('EmployeeId', EmployeeId)
+      .input('ExpenseDate', ExpenseDate)
+      .input('Description', Description)
+      .input('TotalPrice', TotalPrice)
+      .input('ImportId', ImportId)
+      .input('EquipmentId', EquipmentId)
+
+    const query = `
+      INSERT INTO Expenses ( EmployeeId, ExpenseDate, Description,TotalPrice, ImportId, EquipmentId )
+      OUTPUT INSERTED.*
+      VALUES ( @EmployeeId, @ExpenseDate, @Description, @TotalPrice, @ImportId, @EquipmentId )
+    `
+
+    const result = await request.query(query)
+
+    return result.recordset[0]
+  } catch (error) { throw new Error(error) }
 }
 
 const createNewCategory = async (CategoryName) => {
@@ -415,5 +466,6 @@ export const inventoryModel = {
   deleteInventory,
   deleteInventoryCategory,
   createExport,
-  createExportDetail
+  createExportDetail,
+  createExpense
 }
