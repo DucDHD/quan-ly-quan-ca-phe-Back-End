@@ -80,6 +80,19 @@ const createInventory = async (data, EmployeeId) => {
       findInventory.Price
     )
 
+    const totalPrice = StockQuantity * findInventory.Price
+    const ExpenseDate = new Date()
+    const EquipmentId = null
+
+    await inventoryModel.createExpense(
+      EmployeeId,
+      ExpenseDate,
+      `Nhập hàng hóa: ${findInventory.CategoryName}`,
+      totalPrice,
+      createImport.ImportId,
+      EquipmentId
+    )
+
     return updatedInventory
 
   } catch (error) { throw error }

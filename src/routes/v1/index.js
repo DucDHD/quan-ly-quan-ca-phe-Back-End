@@ -4,6 +4,8 @@ import { userRoute } from './userRoute'
 import { saleRoute } from './saleRoute'
 import { equitmentRoute } from './equipmentRoute'
 import { inventoryRoute } from './inventoryRoute'
+import { productRoute } from './productRoute'
+import { expenseRoute } from './expenseRoute'
 
 const Router = express.Router()
 
@@ -24,6 +26,13 @@ Router.use('/equipments', equitmentRoute)
 
 /** Inventory API */
 Router.use('/inventorys', inventoryRoute)
+
+
+/** Products API */
+Router.use('/products', productRoute)
+
+/** Expense API */
+Router.use('/expenses', expenseRoute)
 
 
 export const APIs_V1 = Router
