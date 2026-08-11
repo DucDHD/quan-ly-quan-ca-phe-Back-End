@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes'
 import { userRoute } from './userRoute'
 import { saleRoute } from './saleRoute'
 import { equitmentRoute } from './equipmentRoute'
-import { inventoryRoute } from './InventoryRoute'
+import { inventoryRoute } from './inventoryRoute'
 
 const Router = express.Router()
 
