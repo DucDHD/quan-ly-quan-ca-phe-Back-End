@@ -3,12 +3,13 @@ import { productController } from '~/controllers/productController'
 import { authMiddleware } from '~/middlewares/authMiddleware'
 import { authorizePermission } from '~/middlewares/permissionMiddleware'
 import { PERMISSIONS } from '~/utils/permissions'
+import { productValidation } from '~/validations/productValidation'
 
 const Router = express.Router()
 
 Router.route('/')
   .get(authMiddleware.isAuthorized, authorizePermission('products', PERMISSIONS.VIEW), productController.getAllProducts)
-  .post(authMiddleware.isAuthorized, authorizePermission('products', PERMISSIONS.CREATE), productController.createProduct)
+  .post(authMiddleware.isAuthorized, productValidation.createProduct, authorizePermission('products', PERMISSIONS.CREATE), productController.createProduct)
 
 
 Router.route('/available')
