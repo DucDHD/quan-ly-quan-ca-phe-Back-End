@@ -27,6 +27,12 @@ export const ROLE_PERMISSIONS = {
       PERMISSIONS.CREATE,
       PERMISSIONS.UPDATE,
       PERMISSIONS.DELETE
+    ],
+    expenses: [
+      PERMISSIONS.VIEW,
+      PERMISSIONS.CREATE,
+      PERMISSIONS.UPDATE,
+      PERMISSIONS.DELETE
     ]
   },
 
@@ -51,6 +57,11 @@ export const ROLE_PERMISSIONS = {
       PERMISSIONS.VIEW,
       PERMISSIONS.CREATE,
       PERMISSIONS.UPDATE
+    ],
+    expenses: [
+      PERMISSIONS.VIEW,
+      PERMISSIONS.CREATE,
+      PERMISSIONS.UPDATE
     ]
   },
 
@@ -58,20 +69,23 @@ export const ROLE_PERMISSIONS = {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
     inventorys: [PERMISSIONS.VIEW],
-    products: [PERMISSIONS.VIEW]
+    products: [PERMISSIONS.VIEW],
+    expenses: [PERMISSIONS.VIEW]
   },
 
   [ROLES.BARISTA]: {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
     inventorys: [PERMISSIONS.VIEW],
-    products: [PERMISSIONS.VIEW]
+    products: [PERMISSIONS.VIEW],
+    expenses: [PERMISSIONS.VIEW]
   },
 
   [ROLES.WAITER]: {
     employees: [PERMISSIONS.VIEW],
     equipments: [PERMISSIONS.VIEW],
     inventorys: [PERMISSIONS.VIEW],
-    products: [PERMISSIONS.VIEW]
+    products: [PERMISSIONS.VIEW],
+    expenses: [PERMISSIONS.VIEW]
   }
 }
