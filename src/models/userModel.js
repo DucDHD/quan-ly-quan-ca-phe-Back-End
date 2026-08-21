@@ -10,7 +10,7 @@ const getUserDetailById = async (userId) => {
       .input('userId', sql.Int, userId)
       .query(`
             SELECT 
-                 EmployeeId, RoleId, Username, FullName, Address, PhoneNumber, Salary, Avatar
+                 EmployeeId, RoleId, Username, FullName, Address, PhoneNumber, Salary, Avatar, Password
             FROM Employees
             WHERE EmployeeId = @userId
         `)
@@ -48,12 +48,14 @@ const update = async (userId, updateData) => {
       .input('FullName', sql.NVarChar(256), updateData.FullName)
       .input('Address', sql.NVarChar(256), updateData.Address)
       .input('PhoneNumber', sql.VarChar(10), updateData.PhoneNumber)
+      .input('Password', sql.VarChar(255), updateData.Password || null)
       .query(`
         UPDATE Employees
         SET
           FullName = @FullName,
           Address = @Address,
           PhoneNumber = @PhoneNumber,
+          Password = COALESCE(@Password, Password),
           UpdatedAt = GETDATE()
         WHERE EmployeeId = @EmployeeId
       `)

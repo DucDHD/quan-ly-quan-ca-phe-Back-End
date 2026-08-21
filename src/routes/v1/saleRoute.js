@@ -17,6 +17,12 @@ Router.route('/split_table')
 Router.route('/tranfer_table')
   .put(authMiddleware.isAuthorized, saleValidation.tranferTable, saleController.tranferTables)
 
+Router.route('/tranfer_table')
+  .put(authMiddleware.isAuthorized, saleValidation.tranferTable, saleController.tranferTables)
+
+Router.route('/tranfer_table/:id')
+  .get(authMiddleware.isAuthorized, saleController.getCustomerBooking)
+
 Router.route('/view/:id')
   .get(authMiddleware.isAuthorized, saleController.getTableDetail)
 
@@ -34,7 +40,7 @@ Router.route('/products')
 Router.route('/orders')
   .post(authMiddleware.isAuthorized, saleValidation.tableProduct, saleController.createOrder)
 
-Router.route('/cancel_table/:id')
+Router.route('/cancel_table')
   .put(authMiddleware.isAuthorized, saleController.cancelTable)
 
 Router.route('/merge_table')

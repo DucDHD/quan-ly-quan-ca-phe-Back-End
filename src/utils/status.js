@@ -1,0 +1,12 @@
+export const TABLE_STATUS = {
+  AVAILABLE: 1,
+  OCCUPIED: 2,
+  RESERVED: 3
+}
+
+export const BOOKING_STATUS = {
+  RESERVED: 1,
+  ORDERED: 2,
+  PAID: 3,
+  CANCELLED: 4
+}

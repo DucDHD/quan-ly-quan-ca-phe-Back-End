@@ -25,7 +25,8 @@ const update = async (req, res, next) => {
   const correctCondition = Joi.object({
     FullName: Joi.string().required().min(5).max(256).trim().strict(),
     Address: Joi.string().required().min(5).max(256).trim().strict(),
-    PhoneNumber: Joi.string().required().pattern(PHONE_RULE).message(PHONE_RULE_MESSAGE)
+    PhoneNumber: Joi.string().required().pattern(PHONE_RULE).message(PHONE_RULE_MESSAGE),
+    Password: Joi.string().min(8).max(255).pattern(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d\W]{8,255}$/).optional()
   })
   try {
     await correctCondition.validateAsync(req.body, { abortEarly: false })

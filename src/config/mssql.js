@@ -10,7 +10,8 @@ const configDB = {
   port: env.DATABASE_PORT,
   options: {
     encrypt: false,
-    trustServerCertificate: true
+    trustServerCertificate: true,
+    useUTC: false
   }
 }
 

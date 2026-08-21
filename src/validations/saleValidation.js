@@ -29,6 +29,7 @@ const bookingTable = async (req, res, next) => {
 const tableProduct = async (req, res, next) => {
   const correctCondition = Joi.object({
     TableId: Joi.number().integer().required(),
+    BookingId: Joi.number().integer().required(),
     Products: Joi.array().items(Joi.object({
       ProductId: Joi.number().integer().required(),
       Quantity: Joi.number().integer().min(1).required()
@@ -45,7 +46,8 @@ const tableProduct = async (req, res, next) => {
 const tranferTable = async (req, res, next) => {
   const correctCondition = Joi.object({
     oldTableId: Joi.number().integer().required(),
-    newTableId: Joi.number().integer().required()
+    newTableId: Joi.number().integer().required(),
+    bookingId: Joi.number().integer().required()
   })
   try {
     await correctCondition.validateAsync(req.body, { abortEarly: false })

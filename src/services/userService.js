@@ -19,8 +19,15 @@ const getUserDetailById = async (userId) => {
 
 const update = async (userId, reqBody) => {
   try {
-    const updatedUser = await userModel.update(userId, reqBody)
-    return updatedUser
+    const updatedUser = { ...reqBody }
+
+    if (reqBody.Password) {
+      updatedUser.Password = bcryptjs.hashSync(reqBody.Password, 8)
+    }
+
+    const result = await userModel.update(userId, updatedUser)
+
+    return result
   } catch (error) { throw error }
 }
 

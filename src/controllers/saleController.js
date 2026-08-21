@@ -58,6 +58,18 @@ const payment = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const getCustomerBooking = async (req, res, next) => {
+  try {
+    const tableId = req.params.id
+
+    const result = await saleService.getCustomerBooking(tableId)
+
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 const tranferTables = async (req, res, next) => {
   try {
     const tranferTable = await saleService.tranferTables(req.body)
@@ -86,9 +98,8 @@ const splitTable = async (req, res, next) => {
 
 const cancelTable = async (req, res, next) => {
   try {
-    const TableId = Number(req.params.id)
-    const cancelTable = await saleService.cancelTable(TableId)
-    res.status(StatusCodes.OK).json(cancelTable)
+    const result = await saleService.cancelTable(req.body)
+    res.status(StatusCodes.OK).json(result)
   } catch (error) {
     next(error)
   }
@@ -116,5 +127,6 @@ export const saleController = {
   getInfoSplitTable,
   splitTable,
   cancelTable,
-  mergeTable
+  mergeTable,
+  getCustomerBooking
 }
